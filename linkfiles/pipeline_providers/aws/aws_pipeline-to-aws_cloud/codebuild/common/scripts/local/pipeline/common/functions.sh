@@ -152,6 +152,12 @@ function assume_iam_role {
     access_key=$(echo "${sts_creds}" | jq -r '.Credentials.AccessKeyId')
     secret_access_key=$(echo "${sts_creds}" | jq -r '.Credentials.SecretAccessKey')
     session_token=$(echo "${sts_creds}" | jq -r '.Credentials.SessionToken')
+
+    echo "Setting AWS profile"
+    echo "sts_creds: $sts_creds"
+    echo "access_key: $access_key"
+    echo "session_token: $session_token"
+
     aws configure set profile."$profile".aws_access_key_id "${access_key}"
     aws configure set profile."$profile".aws_secret_access_key "${secret_access_key}"
     aws configure set profile."$profile".aws_session_token "${session_token}"
@@ -162,6 +168,10 @@ function get_accounts_profile {
     local accounts_json_path=$1
     local target_env=$2
 
+    echo "Getting AWS profile from accounts.json"
+    echo "Target env: $target_env"
+    echo "Accounts json path: $accounts_json_path"
+
     if [ -f  "$accounts_json_path" ]; then 
         aws_profile=$(jq -r ".$target_env" $accounts_json_path)
         echo "${aws_profile}"
@@ -169,6 +179,8 @@ function get_accounts_profile {
         echo "accounts.json not found"
         exit 1
     fi
+
+    echo "AWS profile: $aws_profile"
 }
 
 function set_netrc {

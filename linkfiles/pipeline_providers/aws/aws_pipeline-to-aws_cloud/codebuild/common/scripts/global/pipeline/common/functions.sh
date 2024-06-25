@@ -86,6 +86,9 @@ function terragrunt_internals_loop {
 }
 
 function terragrunt_service_loop {
+
+    echo "Terragrunt Service Loop"
+    
     local type=$1
 
     cd "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/env/${TARGETENV}/" || exit 1
