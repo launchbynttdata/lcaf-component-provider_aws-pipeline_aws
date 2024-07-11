@@ -274,7 +274,7 @@ function git_clone_service_properties_using_app_token {
     local trimmed_git_url="${GIT_SERVER_URL#https://}/${GIT_ORG}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}.git"
     git_clone \
         "$SVC_BRANCH" \
-        "https://x-access-token:$GITHUB_APP_TOKEN${trimmed_git_url}" \
+        "https://x-access-token:$GITHUB_APP_TOKEN@${trimmed_git_url}" \
         "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}" &&
         PROPS_COMMIT=$(git -C "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}" rev-parse HEAD)
     export PROPS_COMMIT
