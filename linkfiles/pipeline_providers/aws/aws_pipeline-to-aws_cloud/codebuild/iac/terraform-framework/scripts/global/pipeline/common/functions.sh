@@ -67,8 +67,7 @@ function launch_predict_semver {
 
 function launch_apply_semver {
     local branch="${BUILD_BRANCH:-main}"
-
-    install_asdf "${HOME}"
+    install_asdf "${HOME}" 
     set_vars_script_and_clone_service
     git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
     if git merge-base --is-ancestor "${MERGE_COMMIT_ID}" "origin/${branch}"; then

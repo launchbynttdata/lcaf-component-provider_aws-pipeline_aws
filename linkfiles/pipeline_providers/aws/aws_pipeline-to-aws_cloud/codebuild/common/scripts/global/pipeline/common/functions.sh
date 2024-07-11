@@ -254,13 +254,15 @@ function git_clone_service {
 }
 
 function git_clone_service_using_app_token {
+    assume_iam_role "${AWS_PROFILE_LOGIN_ROLE}" "${AWS_PROFILE_LOGIN_ENV}" "${AWS_REGION}"
 
-    GITHUB_APP_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$TARGETENV")
+    GIT_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$AWS_PROFILE_LOGIN_ENV")
+    export GIT_TOKEN
 
     local trimmed_git_url="${GIT_SERVER_URL#https://}/${GIT_ORG}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}.git"
     git_clone \
         "$SVC_BRANCH" \
-        "https://x-access-token:$GITHUB_APP_TOKEN@${trimmed_git_url}" \
+        "https://x-access-token:$GIT_TOKEN@${trimmed_git_url}" \
         "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}" &&
         SERVICE_COMMIT=$(git -C "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}" rev-parse HEAD)
     export SERVICE_COMMIT
@@ -268,13 +270,15 @@ function git_clone_service_using_app_token {
 }
 
 function git_clone_service_properties_using_app_token {
+    assume_iam_role "${AWS_PROFILE_LOGIN_ROLE}" "${AWS_PROFILE_LOGIN_ENV}" "${AWS_REGION}"
 
-    GITHUB_APP_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$TARGETENV")
+    GIT_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$AWS_PROFILE_LOGIN_ENV")
+    export GIT_TOKEN
 
     local trimmed_git_url="${GIT_SERVER_URL#https://}/${GIT_ORG}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}.git"
     git_clone \
         "$SVC_BRANCH" \
-        "https://x-access-token:$GITHUB_APP_TOKEN@${trimmed_git_url}" \
+        "https://x-access-token:$GIT_TOKEN@${trimmed_git_url}" \
         "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}" &&
         PROPS_COMMIT=$(git -C "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}" rev-parse HEAD)
     export PROPS_COMMIT
@@ -296,7 +300,6 @@ function set_vars_script_and_clone_service {
     set_vars_from_script "${CODEBUILD_SRC_DIR}/set_vars.sh" "${BUILD_BRANCH}" "${TO_BRANCH}"
     set_global_vars
     git_config "${GIT_USERNAME}@${GIT_EMAIL_DOMAIN}" "${GIT_USERNAME}"
-    assume_iam_role "${ROLE_TO_ASSUME}" "${TARGETENV}" "${AWS_REGION}"
     git_clone_service_using_app_token
     git_clone_service_properties_using_app_token
     set_commit_vars
