@@ -7,32 +7,6 @@ function run_conftest_docker {
     conftest test --all-namespaces Dockerfile* --policy components/container/policy
 }
 
-function make_docker_build {
-    local image_tag=$1
-    export CONTAINER_IMAGE_VERSION="${image_tag}"
-
-    run_make_configure
-    make platform/devenv/configure-docker-buildx
-    echo "Container will be built with IMAGE_TAG=$image_tag"
-    make docker/build
-}
-
-function make_docker_push {
-    local image_tag=$1
-    export CONTAINER_IMAGE_VERSION="${image_tag}"
-
-    run_make_configure
-    make platform/devenv/configure-docker-buildx
-    make docker/aws_ecr_login
-    echo "Container will be built with IMAGE_TAG=$image_tag"
-    make docker/push
-}
-
-function start_docker {
-    echo "Starting docker"
-    dockerd &
-}
-
 function add_ecr_image_tag {
     local image_tag=$1
     local commit_id=$2

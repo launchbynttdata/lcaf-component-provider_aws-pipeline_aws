@@ -1,18 +1,3 @@
 #!/bin/bash
-DIR=$(dirname -- "$(readlink -f -- "$BASH_SOURCE")")
-COMMON_GLOBAL_FUNCTIONS="${DIR}/../../../../../common/scripts/global/pipeline/common/functions.sh"
-GLOBAL_FUNCTIONS="${DIR}/../../../../../docker/scripts/global/pipeline/common/functions.sh"
-
-cd "${DIR}"
-if [ -f "$COMMON_GLOBAL_FUNCTIONS" ] || [ -f "$GLOBAL_FUNCTIONS" ]; then
-  # shellcheck source=/dev/null
-  source "${COMMON_GLOBAL_FUNCTIONS}"
-  # shellcheck source=/dev/null
-  source "${GLOBAL_FUNCTIONS}"
-else
-  exit 1
-fi
-
-set -e
-
-build_container
+echo "This feature was deprecated in this version. To continue use this feature, please migrate to launch-cli: https://github.com/launchbynttdata/launch-cli"
+exit 1

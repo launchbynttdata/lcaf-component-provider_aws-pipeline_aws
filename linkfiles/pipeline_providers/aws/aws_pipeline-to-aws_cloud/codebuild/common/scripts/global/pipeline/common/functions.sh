@@ -18,99 +18,6 @@ function simulated_merge {
     fi
 }
 
-function terragrunt_plan {
-    install_asdf "${HOME}"
-    set_vars_script_and_clone_service
-    git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
-    tool_versions_install "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}"
-    set_netrc "${GIT_SERVER_URL}" "${GIT_USERNAME}" "${GIT_TOKEN}"
-    cd "${CODEBUILD_SRC_DIR}/${GIT_REPO}" || exit 1
-
-    if check_git_changes_for_internals "${MERGE_COMMIT_ID}" "${BUILD_BRANCH}" && [ "${INTERNALS_PIPELINE}" == "true" ]; then
-        terragrunt_internals_loop "plan"
-    elif ! check_git_changes_for_internals "${MERGE_COMMIT_ID}" "${BUILD_BRANCH}" && [ "${INTERNALS_PIPELINE}" == "true" ]; then
-        echo "Exiting terragrunt plan as git changes found outside internals with this stage INTERNALS_PIPELINE == true"
-        exit 0
-    elif check_git_changes_for_internals "${MERGE_COMMIT_ID}" "${BUILD_BRANCH}" && [ "${INTERNALS_PIPELINE}" != "true" ]; then
-        echo "Exiting terragrunt plan as git changes found inside internals with this stage INTERNALS_PIPELINE != true"
-        exit 0
-    else
-        terragrunt_service_loop "plan"
-    fi
-}
-
-function terragrunt_deploy {
-    install_asdf "${HOME}"
-    set_vars_script_and_clone_service
-    git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
-    tool_versions_install "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}"
-    set_netrc "${GIT_SERVER_URL}" "${GIT_USERNAME}" "${GIT_TOKEN}"
-    cd "${CODEBUILD_SRC_DIR}/${GIT_REPO}" || exit 1
-
-    if [ "${INTERNALS_PIPELINE}" == "true" ]; then
-        terragrunt_internals_loop "apply"
-    else
-        terragrunt_service_loop "apply"
-    fi
-}
-
-function terragrunt_internals_loop {
-    local type=$1
-
-    cd "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/internals/${INTERNALS_SERVICE}/provider/aws/terragrunt/env/${TARGETENV}/" || exit 1
-    aws_profile=$(get_accounts_profile "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/internals/${INTERNALS_SERVICE}/provider/aws/terragrunt/accounts.json" "${TARGETENV}")
-    find . -mindepth 2 -maxdepth 2 -type d | sed 's|^\.||' | while IFS= read -r dir; do
-        deploy_dir="${dir#/}"
-        region_dir="${deploy_dir%%/*}"
-        assume_iam_role "${ROLE_TO_ASSUME}" "${aws_profile}" "${region_dir}"
-        copy_dependency_to_internals \
-            "${INTERNALS_SERVICE}" \
-            "$TOOLS_DIR/launch-build-agent/components/module/linkfiles/pipeline_providers/aws/aws_pipeline-to-aws_cloud/codebuild/common/specs/actions/codebuild/buildspec.yml" \
-            "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/internals/${INTERNALS_SERVICE}/provider/aws/terragrunt/env/${TARGETENV}/${deploy_dir}" \
-            "https://$GIT_USERNAME:$GIT_TOKEN@${GIT_SERVER_URL#https://}/${GIT_ORG}/git-webhook-lambda.git" \
-            "${CODEBUILD_SRC_DIR}/git-webhook"
-        cd "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/internals/${INTERNALS_SERVICE}/provider/aws/terragrunt/env/${TARGETENV}/${deploy_dir}/" || exit 1
-        run_terragrunt_init
-        case $type in
-            "plan")
-                run_terragrunt_plan;
-            ;;
-            "apply")
-                run_terragrunt_apply;
-            ;;
-            "pre_deploy")
-                run_pre_deploy_test;
-            ;;
-        esac
-    done
-}
-
-function terragrunt_service_loop {
-    local type=$1
-
-    cd "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/env/${TARGETENV}/" || exit 1
-    find . -mindepth 2 -maxdepth 2 -type d | sed 's|^\.||' | while IFS= read -r dir; do
-        deploy_dir="${dir#/}"
-        region_dir="${deploy_dir%%/*}"
-        aws_profile=$(get_accounts_profile "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/accounts.json" "${TARGETENV}")
-        assume_iam_role "${ROLE_TO_ASSUME}" "${aws_profile}" "${region_dir}"
-        cd "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/env/${TARGETENV}/${deploy_dir}/" || exit 1
-        find ${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}/env/${TARGETENV}/${deploy_dir}/ -type f -exec cp -- {} ${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}/env/${TARGETENV}/${deploy_dir}/ \;
-        run_terragrunt_init
-        case $type in
-            "plan")
-                run_terragrunt_plan;
-            ;;
-            "apply")
-                run_terragrunt_apply;
-            ;;
-            "pre_deploy")
-                run_pre_deploy_test;
-            ;;
-        esac
-    done
-}
-
 function pre_deploy_test {
     install_asdf "${HOME}"
     set_vars_script_and_clone_service
@@ -254,8 +161,6 @@ function git_clone_service {
 }
 
 function git_clone_service_using_app_token {
-    assume_iam_role "${AWS_PROFILE_LOGIN_ROLE}" "${AWS_PROFILE_LOGIN_ENV}" "${AWS_REGION}"
-
     GIT_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$AWS_PROFILE_LOGIN_ENV")
     export GIT_TOKEN
 
@@ -267,22 +172,6 @@ function git_clone_service_using_app_token {
         SERVICE_COMMIT=$(git -C "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}" rev-parse HEAD)
     export SERVICE_COMMIT
     echo "${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"} HEAD commit: ${SERVICE_COMMIT}"
-}
-
-function git_clone_service_properties_using_app_token {
-    assume_iam_role "${AWS_PROFILE_LOGIN_ROLE}" "${AWS_PROFILE_LOGIN_ENV}" "${AWS_REGION}"
-
-    GIT_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$AWS_PROFILE_LOGIN_ENV")
-    export GIT_TOKEN
-
-    local trimmed_git_url="${GIT_SERVER_URL#https://}/${GIT_ORG}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}.git"
-    git_clone \
-        "$SVC_BRANCH" \
-        "https://x-access-token:$GIT_TOKEN@${trimmed_git_url}" \
-        "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}" &&
-        PROPS_COMMIT=$(git -C "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX}" rev-parse HEAD)
-    export PROPS_COMMIT
-    echo "${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}${PROPERTIES_REPO_SUFFIX} HEAD commit: ${PROPS_COMMIT}"
 }
 
 function git_clone_service_properties {
@@ -301,6 +190,5 @@ function set_vars_script_and_clone_service {
     set_global_vars
     git_config "${GIT_USERNAME}@${GIT_EMAIL_DOMAIN}" "${GIT_USERNAME}"
     git_clone_service_using_app_token
-    git_clone_service_properties_using_app_token
     set_commit_vars
 }

@@ -184,33 +184,6 @@ function set_netrc {
     chmod 600 ~/.netrc
 }
 
-function run_terragrunt_init {
-    echo "Running terragrunt init"
-    terragrunt init  --terragrunt-non-interactive
-}
-
-function run_terragrunt_plan {
-    local out_filename=$1
-
-    echo "Running terragrunt plan"
-    if [ -z "$out_filename" ]; then 
-        terragrunt plan
-    else
-        terragrunt plan -out "$out_filename"
-    fi
-}
-
-function run_terragrunt_apply {
-    local var_filename=$1
-
-    echo "Running terragrunt apply"
-    if [ -z "$var_filename" ]; then 
-        terragrunt apply -auto-approve 
-    else
-        terragrunt apply -var-file "$var_filename" -auto-approve 
-    fi
-}
-
 function codebuild_status_callback {
     local commit_id=$1
     local callback_url=$2

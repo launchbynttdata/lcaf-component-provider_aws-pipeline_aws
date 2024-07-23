@@ -20,28 +20,6 @@ function conftest_container {
     run_conftest_docker
 }
 
-function build_container {
-    start_docker
-    install_asdf "${HOME}"
-    set_vars_script_and_clone_service
-    git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
-    tool_versions_install "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}"
-    assume_iam_role "${ROLE_TO_ASSUME}" "${TARGETENV}" "${AWS_REGION}"
-    set_netrc "${GIT_SERVER_URL}" "${GIT_USERNAME}" "${GIT_TOKEN}"
-    make_docker_build "${MERGE_COMMIT_ID}"
-}
-
-function push_container {
-    start_docker
-    install_asdf "${HOME}"
-    set_vars_script_and_clone_service
-    git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
-    tool_versions_install "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}"
-    assume_iam_role "${ROLE_TO_ASSUME}" "${TARGETENV}" "${AWS_REGION}"
-    set_netrc "${GIT_SERVER_URL}" "${GIT_USERNAME}" "${GIT_TOKEN}"
-    make_docker_push "${MERGE_COMMIT_ID}"
-}
-
 function tag_container {    
     install_asdf "${HOME}"
     set_vars_script_and_clone_service

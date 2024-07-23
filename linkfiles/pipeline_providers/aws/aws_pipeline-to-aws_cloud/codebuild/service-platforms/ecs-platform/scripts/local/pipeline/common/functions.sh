@@ -1,32 +1,5 @@
 #!/bin/bash
 
-function run_make_codebuild_jinja {
-    echo "Running make codebuild-jinja"
-    asdf reshim
-    make codebuild-jinja
-}
-
-function run_make_platform {
-    echo "Running make platform/devenv/configure-docker-buildx"
-    make platform/devenv/configure-docker-buildx
-}
-
-function run_make_docker_aws_ecr_login {
-    echo "Running make docker/aws_ecr_login"
-    make docker/aws_ecr_login
-}
-
-function start_docker {
-    echo "Starting docker"
-    dockerd &
-}
-
-function push_docker_image {
-    local image_version=$1
-    echo "Pushing image to ECR"
-    export CONTAINER_IMAGE_VERSION="$image_version" && make docker/push
-}
-
 function python_setup {
     local dir=$1
 
@@ -37,35 +10,6 @@ function python_setup {
 function run_mvn_clean_install {
     echo "Running mvn clean install -DskipTests"
     mvn clean install -DskipTests
-}
-
-function create_properties_var_file {
-    local base_path=$1
-    local repository=$2
-    local target_env=$3
-    local image_tag=$4
-    local container_uri=$5
-    local properties=$6
-    local dir=$7
-
-    cd "$dir" ||  exit 1
-    cp -rf $base_path/${repository}${properties}/$target_env/terragrunt/* ./
-    echo "app_image_tag=\"$container_uri/$repository:$image_tag\"
-        force_new_deployment=\"true\"
-        app_environment = {
-        timestamp=$(date +%s)
-        $(cat $base_path/$repository/configuration/application-envvars.env)
-        $(cat $base_path/$repository/configuration/wildfly-envvars.env)
-        }
-        app_secrets = {
-        $(cat $base_path/$repository/configuration/application-envsecrets-arns.env)
-        $(cat $base_path/$repository/configuration/wildfly-envsecrets-arns.env)
-        }" > env_vars.tfvars
-}
-
-function run_terragrunt_apply_var_file {
-    echo "Running terragrunt apply"
-    terragrunt apply -var-file ./env_vars.tfvars -auto-approve
 }
 
 function print_running_td {
