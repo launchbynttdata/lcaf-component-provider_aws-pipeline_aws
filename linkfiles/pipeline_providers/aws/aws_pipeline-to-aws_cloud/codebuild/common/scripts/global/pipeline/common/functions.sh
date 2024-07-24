@@ -161,7 +161,7 @@ function git_clone_service {
 }
 
 function git_clone_service_using_app_token {
-    GIT_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME" --aws-profile "$AWS_PROFILE_LOGIN_ENV")
+    GIT_TOKEN=$(launch github auth application --application-id-parameter-name "$APPLICATION_ID_PARAMETER_NAME" --installation-id-parameter-name "$INSTALLATION_ID_PARAMETER_NAME" --signing-cert-secret-name "$SIGNING_CERT_SECRET_NAME")
     export GIT_TOKEN
 
     local trimmed_git_url="${GIT_SERVER_URL#https://}/${GIT_ORG}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}.git"
