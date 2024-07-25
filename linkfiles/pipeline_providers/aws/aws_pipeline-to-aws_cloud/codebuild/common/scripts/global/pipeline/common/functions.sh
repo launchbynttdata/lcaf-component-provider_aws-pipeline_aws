@@ -19,43 +19,11 @@ function simulated_merge {
 }
 
 function pre_deploy_test {
-    install_asdf "${HOME}"
-    set_vars_script_and_clone_service
-    git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
-    tool_versions_install "${CODEBUILD_SRC_DIR}/${GIT_REPO%"${PROPERTIES_REPO_SUFFIX}"}"
-    set_netrc "${GIT_SERVER_URL}" "${GIT_USERNAME}" "${GIT_TOKEN}"
-    run_make_configure
-    if [ "${INTERNALS_PIPELINE}" == "true" ]; then
-        terragrunt_internals_loop "pre_deploy"
-    else
-        terragrunt_service_loop "pre_deploy"
-    fi
+    echo "legacy deprecated, migrating to launch-cli: #136"
 }
 
 function tf_post_deploy_functional_test {
-    install_asdf "${HOME}"
-    set_vars_script_and_clone_service
-    git_checkout "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}"
-    if ! run_post_deploy_functional_test "${TEST_FAILURE}"; then
-        echo "Failure detected from Post Deployment Functional Tests. Rolling back."
-        MERGE_COMMIT_ID=$(rollback_env "${ENV_GIT_TAG}" "${MERGE_COMMIT_ID}" "${CODEBUILD_SRC_DIR}/${GIT_REPO}")
-        export MERGE_COMMIT_ID
-        create_global_vars_script \
-            "${MERGE_COMMIT_ID}" \
-            "${LATEST_COMMIT_HASH}" \
-            "${GIT_PROJECT}" \
-            "${GIT_REPO}" \
-            "${FROM_BRANCH}" \
-            "${TO_BRANCH}" \
-            "${PROPERTIES_REPO_SUFFIX}" \
-            "${GIT_SERVER_URL}" \
-            "${IMAGE_TAG}" \
-            "${SERVICE_COMMIT}" \
-            "${CODEBUILD_SRC_DIR}" \
-            "${GIT_ORG}"
-        copy_zip_to_s3_bucket "${USERVAR_S3_CODEPIPELINE_BUCKET}" "${CODEBUILD_SRC_DIR}"
-        exit 1
-    fi
+    echo "legacy deprecated, migrating to launch-cli: #137"
 }
 
 function certify_env {
