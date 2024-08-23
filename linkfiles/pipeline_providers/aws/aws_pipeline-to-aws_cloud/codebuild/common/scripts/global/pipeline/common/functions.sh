@@ -43,7 +43,7 @@ function trigger_pipeline {
         "${TO_BRANCH}" \
         "${PROPERTIES_REPO_SUFFIX}" \
         "${GIT_SERVER_URL}" \
-        "${IMAGE_TAG}" \
+        "${IMAGE_TAG_PREFIX}" \
         "${SERVICE_COMMIT}" \
         "${CODEBUILD_SRC_DIR}" \
         "${GIT_ORG}"
