@@ -10,7 +10,7 @@ fi
 
 function certify_image {
     set_vars_from_script "${CODEBUILD_SRC_DIR}/set_vars.sh"
-    add_ecr_image_tag "${NEW_IMAGE_TAG}" "${MERGE_COMMIT_ID}" "${GIT_REPO}"
+    add_ecr_image_tag "${NEW_IMAGE_TAG}" "${MERGE_COMMIT_ID}" "${CONTAINER_IMAGE_NAME}"
 }
 
 function set_make_vars_and_artifact_token {
