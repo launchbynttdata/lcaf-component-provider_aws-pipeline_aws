@@ -258,6 +258,12 @@ function create_global_vars_script {
     else
         tag="${image_tag}-${svc_commit}";
     fi
+    if [ ! -z "$SENDER_LOGIN" ]; then
+        echo "export SENDER_LOGIN=\"$SENDER_LOGIN\"" >> vars.sh
+    fi
+    if [ ! -z "$PR_NUMBER" ]; then
+        echo "export PR_NUMBER=\"$PR_NUMBER\"" >> vars.sh
+    fi
     {   echo "export GIT_REPO=\"$git_repo\"";
         echo "export GIT_PROJECT=\"$git_project\"";
         echo "export GIT_ORG=\"$git_org\"";
